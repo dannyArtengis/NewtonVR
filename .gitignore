@@ -24,3 +24,6 @@ sysinfo.txt
 Holotoolkit/
 .vs/ 
 Assets/HoloToolkit.meta
+
+# IDE
+.idea
