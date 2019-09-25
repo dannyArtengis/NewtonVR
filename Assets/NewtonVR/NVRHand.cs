@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Artengis;
 
 namespace NewtonVR
 {
@@ -282,7 +283,7 @@ namespace NewtonVR
             UpdateVisibilityAndColliders();
         }
 
-        protected void UpdateHovering()
+        protected void UpdateHovering_org()
         {
             if (CurrentHandState == HandState.Idle)
             {
@@ -296,6 +297,61 @@ namespace NewtonVR
                     }
                 }
             }
+
+            if (InputDevice != null && IsInteracting == false && IsHovering == true)
+            {
+                if (Player.VibrateOnHover == true)
+                {
+                    InputDevice.TriggerHapticPulse(100);
+                }
+            }
+        }
+        protected void UpdateHovering()
+        {
+            if (CurrentHandState == HandState.Idle)
+            {
+                // DS:
+                NVRInteractable closest = null;
+                float closestDistance = float.MaxValue;
+
+                var hoveringEnumerator = CurrentlyHoveringOver.GetEnumerator();
+                while (hoveringEnumerator.MoveNext())
+                {
+                    var hoveringOver = hoveringEnumerator.Current;
+                    if (hoveringOver.Value.Count > 0)
+                    {
+                        hoveringOver.Key.HoveringUpdate(this, Time.time - hoveringOver.Value.OrderBy(colliderTime => colliderTime.Value).First().Value);
+
+                        // DS: compute closet object
+                        float distance = Vector3.Distance(transform.position, hoveringOver.Key.transform.position);
+                        if (distance < closestDistance)
+                        {
+                            closestDistance = distance;
+                            closest = hoveringOver.Key;
+                        }
+                    }
+                }
+
+                //DS:remove outline script from all but the closest object
+                hoveringEnumerator = CurrentlyHoveringOver.GetEnumerator();
+                while (hoveringEnumerator.MoveNext())
+                {
+                    var hoveringOver = hoveringEnumerator.Current;
+                    if (hoveringOver.Key.gameObject != closest.gameObject)
+                    {
+                        Utils.destroyAllComponents<Outline>(hoveringOver.Key.gameObject);
+                    }
+                }
+
+                if (closest != null)
+                {
+                    Outline outline = Utils.getOrCreateComponent<Outline>(closest.gameObject);
+                    outline.OutlineMode = Outline.Mode.OutlineAll;
+                    outline.OutlineWidth = 10;
+                    outline.OutlineColor = new Color(1.0f, 0.0f, 0.578f);
+                }
+            }
+
 
             if (InputDevice != null && IsInteracting == false && IsHovering == true)
             {
@@ -369,7 +425,7 @@ namespace NewtonVR
             else if (CurrentInteractionStyle == InterationStyle.ByScript)
             {
                 //this is handled by user customized scripts.
-               
+
             }
 
             if (IsInteracting == true)
@@ -617,21 +673,21 @@ namespace NewtonVR
             NVRInteractable closest = null;
             float closestDistance = float.MaxValue;
 
-			foreach(var collider in GhostColliders)
-			{
-	            foreach (var hovering in CurrentlyHoveringOver)
-	            {
-	                if (hovering.Key == null)
-	                    continue;
+            foreach(var collider in GhostColliders)
+            {
+                foreach (var hovering in CurrentlyHoveringOver)
+                {
+                    if (hovering.Key == null)
+                        continue;
 
-	                float distance = Vector3.Distance(collider.transform.position, hovering.Key.transform.position);
-	                if (distance < closestDistance)
-	                {
-	                    closestDistance = distance;
-	                    closest = hovering.Key;
-	                }
-	            }
-			}
+                    float distance = Vector3.Distance(collider.transform.position, hovering.Key.transform.position);
+                    if (distance < closestDistance)
+                    {
+                        closestDistance = distance;
+                        closest = hovering.Key;
+                    }
+                }
+            }
             if (closest != null)
             {
                 BeginInteraction(closest);
@@ -683,6 +739,9 @@ namespace NewtonVR
                     if (CurrentlyHoveringOver[interactable].Count == 0)
                     {
                         CurrentlyHoveringOver.Remove(interactable);
+
+                        //DS: better put this in a onEvent callback
+                        Utils.destroyAllComponents<Outline>(interactable.gameObject);
                     }
                 }
             }

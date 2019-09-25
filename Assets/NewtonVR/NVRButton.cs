@@ -1,5 +1,5 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using Artengis;
+using UnityEngine;
 
 namespace NewtonVR
 {
@@ -9,6 +9,9 @@ namespace NewtonVR
 
         [Tooltip("The (worldspace) distance from the initial position you have to push the button for it to register as pushed")]
         public float DistanceToEngage = 0.075f;
+
+        [Tooltip( "Axis along which the button can be pushed" )]
+        public Axis movementAxis = Axis.Y;
 
         [Tooltip("Is set to true when the button has been pressed down this update frame")]
         public bool ButtonDown = false;
@@ -85,7 +88,9 @@ namespace NewtonVR
 
         private void ConstrainPosition()
         {
-            ConstrainedPosition.y = this.transform.localPosition.y;
+            if(movementAxis == Axis.X) ConstrainedPosition.x = this.transform.localPosition.x;
+            if(movementAxis == Axis.Y) ConstrainedPosition.y = this.transform.localPosition.y;
+            if(movementAxis == Axis.Z) ConstrainedPosition.z = this.transform.localPosition.z;
             this.transform.localPosition = ConstrainedPosition;
             this.transform.localRotation = ConstrainedRotation;
         }
