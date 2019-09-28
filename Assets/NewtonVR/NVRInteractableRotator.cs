@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.Events;
 
 namespace NewtonVR
 {
@@ -9,6 +10,9 @@ namespace NewtonVR
 
         protected virtual float DeltaMagic { get { return 1f; } }
         protected Transform InitialAttachPoint;
+
+        public UnityEvent OnBeginInteraction;
+        public UnityEvent OnEndInteraction;
 
         protected override void Awake()
         {
@@ -37,6 +41,11 @@ namespace NewtonVR
             InitialAttachPoint.rotation = hand.transform.rotation;
             InitialAttachPoint.localScale = Vector3.one * 0.25f;
             InitialAttachPoint.parent = this.transform;
+
+            if (OnBeginInteraction != null)
+            {
+                OnBeginInteraction.Invoke();
+            }
         }
 
         public override void EndInteraction(NVRHand hand)
@@ -45,6 +54,11 @@ namespace NewtonVR
 
             if (InitialAttachPoint != null)
                 Destroy(InitialAttachPoint.gameObject);
+
+            if (OnEndInteraction != null)
+            {
+                OnEndInteraction.Invoke();
+            }
         }
 
     }

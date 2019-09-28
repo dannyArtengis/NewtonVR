@@ -4,40 +4,40 @@ using UnityEngine.Events;
 
 namespace NewtonVR
 {
-    public class NVRButton : MonoBehaviour
+    public class NVRKnob : MonoBehaviour
     {
         public Rigidbody Rigidbody;
 
-        [Tooltip("The (worldspace) distance from the initial position you have to push the button for it to register as pushed")]
-        public float DistanceToEngage = 0.075f;
+        [Tooltip("The (worldspace) rotation distance from the initial rotation you have to turn the knob for it to register as turned on")]
+        public float RotationToActive = 90.0f;
 
-        [Tooltip( "Axis along which the button can be pushed" )]
-        public Axis movementAxis = Axis.Y;
+        [Tooltip("Axis along which the knob can be rotated")]
+        public Axis movementAxis = Axis.Z;
 
         [Tooltip("Is set to true when the button has been pressed down this update frame")]
-        public bool ButtonDown = false;
+        public bool KnobActivated = false;
 
         [Tooltip("Is set to true when the button has been released from the down position this update frame")]
-        public bool ButtonUp = false;
+        public bool KnobDeactivated = false;
 
         [Tooltip("Is set to true each frame the button is pressed down")]
-        public bool ButtonIsPushed = false;
+        public bool KnobIsActive = false;
 
         [Tooltip("Is set to true if the button was in a pushed state last frame")]
-        public bool ButtonWasPushed = false;
+        public bool KnobWasActive = false;
 
         [Tooltip("Invoked when the button is first activated")]
-        public UnityEvent OnButtonDown;
+        public UnityEvent OnKnobActivated;
 
         [Tooltip("Invoked when the button was aktive and is released now")]
-        public UnityEvent OnButtonUp;
+        public UnityEvent OnKnobDeactivated;
 
         protected Transform InitialPosition;
         protected float MinDistance = 0.001f;
 
         protected float PositionMagic = 1000f;
 
-        protected float CurrentDistance = -1;
+        protected float CurrentAngleDiff = 0.0f;
 
         private Vector3 InitialLocalPosition;
         private Vector3 ConstrainedPosition;
@@ -69,48 +69,51 @@ namespace NewtonVR
 
         private void FixedUpdate()
         {
-            ConstrainPosition();
+            ConstrainRotation();
 
-            CurrentDistance = Vector3.Distance(this.transform.position, InitialPosition.position);
-
+            CurrentAngleDiff = Quaternion.Angle(InitialLocalRotation, this.transform.localRotation);
             Vector3 PositionDelta = InitialPosition.position - this.transform.position;
             this.Rigidbody.velocity = PositionDelta * PositionMagic * Time.deltaTime;
         }
 
         private void Update()
         {
-            ButtonWasPushed = ButtonIsPushed;
-            ButtonIsPushed = CurrentDistance > DistanceToEngage;
+            KnobWasActive = KnobIsActive;
+            KnobIsActive = CurrentAngleDiff > RotationToActive;
 
-            if (ButtonWasPushed == false && ButtonIsPushed == true)
+            if (KnobWasActive == false && KnobIsActive == true)
             {
-                ButtonDown = true;
-                OnButtonDown.Invoke();
+                KnobActivated = true;
+                OnKnobActivated.Invoke();
             }
             else
-                ButtonDown = false;
+                KnobActivated = false;
 
-            if (ButtonWasPushed == true && ButtonIsPushed == false)
+            if (KnobWasActive == true && KnobIsActive == false)
             {
-                ButtonUp = true;
-                OnButtonUp.Invoke();
+                KnobDeactivated = true;
+                OnKnobDeactivated.Invoke();
             }
             else
-                ButtonUp = false;
+                KnobDeactivated = false;
         }
 
-        private void ConstrainPosition()
+        private void ConstrainRotation()
         {
-            if(movementAxis == Axis.X) ConstrainedPosition.x = this.transform.localPosition.x;
-            if(movementAxis == Axis.Y) ConstrainedPosition.y = this.transform.localPosition.y;
-            if(movementAxis == Axis.Z) ConstrainedPosition.z = this.transform.localPosition.z;
+            Vector3 constrainedEuler = ConstrainedRotation.eulerAngles;
+            Vector3 currentEuler = transform.localRotation.eulerAngles;
+
+            if (movementAxis == Axis.X) constrainedEuler.x = currentEuler.x;
+            if (movementAxis == Axis.Y) constrainedEuler.y = currentEuler.y;
+            if (movementAxis == Axis.Z) constrainedEuler.z = currentEuler.z;
+
+            this.transform.localRotation = Quaternion.Euler(constrainedEuler);
             this.transform.localPosition = ConstrainedPosition;
-            this.transform.localRotation = ConstrainedRotation;
         }
 
         private void LateUpdate()
         {
-            ConstrainPosition();
+            ConstrainRotation();
         }
     }
 }

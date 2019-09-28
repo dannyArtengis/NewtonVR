@@ -253,7 +253,7 @@ namespace NewtonVR
             Rigidbody.drag = 0;
             Rigidbody.angularDrag = 0.05f;
 
-            DisablePhysicalMaterials();
+            DisablePhysicalMaterials();            
 
             Transform pickupTransform = new GameObject(string.Format("[{0}] NVRPickupTransform", this.gameObject.name)).transform;
             pickupTransform.parent = hand.transform;

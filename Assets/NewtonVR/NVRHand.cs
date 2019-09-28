@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Artengis;
+using HighlightPlus;
 
 namespace NewtonVR
 {
@@ -332,6 +333,7 @@ namespace NewtonVR
                     }
                 }
 
+
                 //DS:remove outline script from all but the closest object
                 hoveringEnumerator = CurrentlyHoveringOver.GetEnumerator();
                 while (hoveringEnumerator.MoveNext())
@@ -339,16 +341,20 @@ namespace NewtonVR
                     var hoveringOver = hoveringEnumerator.Current;
                     if (hoveringOver.Key.gameObject != closest.gameObject)
                     {
-                        Utils.destroyAllComponents<Outline>(hoveringOver.Key.gameObject);
+                        HighlightEffect oldHighlight = hoveringOver.Key.gameObject.GetComponentInChildren<HighlightEffect>();
+                        if (oldHighlight != null) Destroy(oldHighlight);
                     }
                 }
 
-                if (closest != null)
+                if (closest != null && !closest.AttachedHands.Contains(this) && closest.GetComponent<HighlightEffect>() == null)
                 {
-                    Outline outline = Utils.getOrCreateComponent<Outline>(closest.gameObject);
-                    outline.OutlineMode = Outline.Mode.OutlineAll;
-                    outline.OutlineWidth = 10;
-                    outline.OutlineColor = new Color(1.0f, 0.0f, 0.578f);
+                    HighlightEffect highlight = Utils.getOrCreateComponent<HighlightEffect>(closest.gameObject);
+                    HighlightProfile profile = Resources.Load<HighlightProfile>("Highlight Plus Profile (blue)");
+                    highlight.ProfileLoad(profile);
+                    highlight.highlighted = true;
+                    highlight.flipY = true;
+                    Debug.Log("added highlight script");
+
                 }
             }
 
@@ -635,6 +641,8 @@ namespace NewtonVR
                 CurrentlyInteracting = interactable;
                 CurrentlyInteracting.BeginInteraction(this);
 
+                Utils.destroyAllComponents<HighlightEffect>(CurrentlyInteracting.gameObject, true);
+
                 if (OnBeginInteraction != null)
                 {
                     OnBeginInteraction.Invoke(interactable);
@@ -673,7 +681,7 @@ namespace NewtonVR
             NVRInteractable closest = null;
             float closestDistance = float.MaxValue;
 
-            foreach(var collider in GhostColliders)
+            foreach (var collider in GhostColliders)
             {
                 foreach (var hovering in CurrentlyHoveringOver)
                 {
@@ -740,8 +748,9 @@ namespace NewtonVR
                     {
                         CurrentlyHoveringOver.Remove(interactable);
 
-                        //DS: better put this in a onEvent callback
-                        Utils.destroyAllComponents<Outline>(interactable.gameObject);
+                        //DS: better put this in a onEvent callback             
+                        HighlightEffect oldHighlight = interactable.gameObject.GetComponentInChildren<HighlightEffect>();
+                        if (oldHighlight != null) Destroy(oldHighlight);
                     }
                 }
             }
