@@ -41,6 +41,7 @@ namespace NewtonVR
 
         private Vector3 InitialLocalPosition;
         private Vector3 ConstrainedPosition;
+        private Vector3 MinPositionVec;
 
         private Quaternion InitialLocalRotation;
         private Quaternion ConstrainedRotation;
@@ -51,6 +52,8 @@ namespace NewtonVR
             InitialPosition.parent = this.transform.parent;
             InitialPosition.localPosition = Vector3.zero;
             InitialPosition.localRotation = Quaternion.identity;
+
+            MinPositionVec = InitialPosition.localPosition - new Vector3(DistanceToEngage, DistanceToEngage, DistanceToEngage);
 
             if (Rigidbody == null)
                 Rigidbody = this.GetComponent<Rigidbody>();
@@ -101,11 +104,12 @@ namespace NewtonVR
 
         private void ConstrainPosition()
         {
-            if(movementAxis == Axis.X) ConstrainedPosition.x = this.transform.localPosition.x;
-            if(movementAxis == Axis.Y) ConstrainedPosition.y = this.transform.localPosition.y;
-            if(movementAxis == Axis.Z) ConstrainedPosition.z = this.transform.localPosition.z;
-            this.transform.localPosition = ConstrainedPosition;
-            this.transform.localRotation = ConstrainedRotation;
+            if (movementAxis == Axis.X) ConstrainedPosition.x = Mathf.Clamp(transform.localPosition.x, MinPositionVec.x, 0.0f);
+            else if (movementAxis == Axis.Y) ConstrainedPosition.y = Mathf.Clamp(transform.localPosition.y, MinPositionVec.y, 0.0f);
+            else if (movementAxis == Axis.Z) ConstrainedPosition.z = Mathf.Clamp(transform.localPosition.z, MinPositionVec.z, 0.0f);
+
+            transform.localPosition = ConstrainedPosition;
+            transform.localRotation = ConstrainedRotation;
         }
 
         private void LateUpdate()
